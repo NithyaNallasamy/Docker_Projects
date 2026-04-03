@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  # 1. The Database Layer (The Vault)
+  db:
+    image: postgres:15-alpine
+    container_name: architect-db
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password123
+      POSTGRES_DB: taskdb
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - architect-network
+
+  # 2. The Application Layer (The Brain)
+  backend:
+    build: ./backend
+    container_name: architect-backend
+    ports:
+      - "5000:5000"
+    environment:
+      DATABASE_URL: postgresql://user:password123@db:5432/taskdb
+    depends_on:
+      - db
+    networks:
+      - architect-network
+
+  # 3. The Presentation Layer (The Face)
+  frontend:
+    build: ./frontend
+    container_name: architect-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - architect-network
+
+# Define the persistent storage
+volumes:
+  pgdata:
+
+# Define the private internal network
+networks:
+  architect-network:
+    driver: bridge
