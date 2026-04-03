@@ -125,6 +125,63 @@ To make "The Architect" function, your backend/index.js needs to act as the "Bra
 2.	Connect to the PostgreSQL database container.
 3.	Handle CORS (Cross-Origin Resource Sharing) so the browser doesn't block the connection between port 3000 and port 5000.
 
+There are three ways to insert data into your new Architect project, depending on which "layer" you want to test.
+
+1. The "Manual" Way (Inside the Database Container)
+This proves your Volumes are working. We will "teleport" into the Postgres container and run SQL commands.
+
+Run this in your terminal:
+
+Bash
+docker exec -it architect-db psql -U user -d taskdb
+Once you see the taskdb=# prompt, create a table and insert a row:
+
+SQL
+CREATE TABLE tasks (id SERIAL PRIMARY KEY, title TEXT);
+INSERT INTO tasks (title) VALUES ('Master Docker Architecture');
+SELECT * FROM tasks;
+To exit, type \q and hit Enter.
+
+2. The "Automated" Way (Using a SQL Script)
+You can tell Docker to automatically populate your database the moment it starts up. This is a massive pro-tip for your resume.
+
+Create a folder in your root directory called init-db.
+
+Create a file inside it called schema.sql:
+
+SQL
+CREATE TABLE IF NOT EXISTS items (
+    id SERIAL PRIMARY KEY,
+    name TEXT NOT NULL
+);
+INSERT INTO items (name) VALUES ('First Docker Item');
+Update your docker-compose.yml to "mount" this script:
+
+YAML
+db:
+  image: postgres:15-alpine
+  volumes:
+    - pgdata:/var/lib/postgresql/data
+    - ./init-db:/docker-entrypoint-initdb.d # <--- Add this line
+Why? Postgres is programmed to run any .sql file it finds in that specific internal folder during the very first boot.
+
+3. The "Application" Way (The Architect's Method)
+The most "realistic" way is to let your Backend handle it. Let's add a "POST" route to your backend/index.js so the Frontend can send data.
+
+Update your backend/index.js by adding this:
+
+JavaScript
+app.post('/add', async (req, res) => {
+  const { taskName } = req.body;
+  try {
+    await pool.query('INSERT INTO tasks (title) VALUES ($1)', [taskName]);
+    res.json({ message: `Task "${taskName}" saved to Postgres!` });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
 Pro-Tips for "The Architect" Project
 Now that it's working, here are two "Maintenance" commands every Docker pro should know:
 
@@ -132,9 +189,6 @@ Now that it's working, here are two "Maintenance" commands every Docker pro shou
 docker-compose logs -f backend
 •	How to wipe the slate clean: If you want to delete the database and start over (including the volume): 
 docker-compose down -v
-
-
-
 
 
 summary :
