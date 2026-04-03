@@ -192,6 +192,7 @@ docker-compose down -v
 
 
 summary :
-"I implemented a decoupled 3-tier architecture using Docker Compose. This allowed for Separation of Concerns, 
+"I implemented a decoupled 3-tier architecture
+using Docker Compose. This allowed for Separation of Concerns, 
 where the React frontend remains stateless, the Node.js backend handles business logic, 
 and the PostgreSQL layer ensures data persistence through Docker Volumes."
